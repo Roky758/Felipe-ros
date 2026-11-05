@@ -1,0 +1,38 @@
+name: Enviar temperatura y humedad
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  send-measurement:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar el repositorio
+        uses: actions/checkout@v4
+
+      - name: Preparar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependencias
+        run: python -m pip install -r requirements.txt
+
+      - name: Generar y enviar una medicion
+        env:
+          THINGSPEAK_API_KEY: ${{ secrets.THINGSPEAK_API_KEY }}
+        run: python main.py
+
+      - name: Guardar el CSV como artefacto descargable
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: temperatura-humedad-${{ github.run_id }}
+          path: temperatura_humedad.csv
+          if-no-files-found: warn
+          retention-days: 30
